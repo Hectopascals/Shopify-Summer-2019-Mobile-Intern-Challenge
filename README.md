@@ -3,12 +3,12 @@ My submission for the Mobile Developer Intern (iOS) - Summer 2019 role at Shopif
 
 ## Screenshots
 
-* List of all the custom collections
+* List of all the custom collections:
 
 <img src="Screenshot_1.png">
 
 
-Can all be seen in this screenshot (including the extras):
+Can all be seen in the screenshot below (including the extras):
 * Product name
 * Total available inventory across all variants of the product
 * Collection title
