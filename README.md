@@ -8,7 +8,7 @@ My submission for the Mobile Developer Intern (iOS) - Summer 2019 role at Shopif
 <img src="Screenshot_1.png">
 
 
-Can all be seen in the screenshot below (including the extras):
+Things seen in the screenshot below (including the extras):
 * Product name
 * Total available inventory across all variants of the product
 * Collection title
