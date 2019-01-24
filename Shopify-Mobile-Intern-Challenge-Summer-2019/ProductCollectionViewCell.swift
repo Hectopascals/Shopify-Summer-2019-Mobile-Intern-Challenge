@@ -34,6 +34,7 @@ class ProductCollectionViewCell: UICollectionViewCell {
         super.init(coder: aDecoder)
     }
     
+    // Snapkit constraints
     private func configure() {
         nameLabel.snp.makeConstraints { make in
             make.top.equalToSuperview()

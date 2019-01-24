@@ -56,8 +56,9 @@ class CollectionDetailsViewController: UIViewController {
         layout.estimatedItemSize = CGSize(width: self.view.frame.width, height: 300)
         let collectionView = UICollectionView(frame: self.view.frame, collectionViewLayout: layout)
         collectionView.register(ProductCollectionViewCell.self, forCellWithReuseIdentifier: "collectionViewCell")
+        collectionView.backgroundColor = UIColor.white
         collectionView.dataSource = self
-        
+
         Requests.fetchProductsFromCollects(collectionId: collectionId) { products in
             self.products = products.compactMap({
                 ProductInfo(
@@ -68,12 +69,11 @@ class CollectionDetailsViewController: UIViewController {
                     collectionImageURL: $0.image.src)
             })
             
-            DispatchQueue.main.async { // reload table data in the main thread
+            // Reload data in main thread
+            DispatchQueue.main.async {
                 collectionView.reloadData()
             }
         }
-    
-        collectionView.backgroundColor = UIColor.white
         view.addSubview(collectionView)
     }
 }
@@ -90,6 +90,7 @@ extension CollectionDetailsViewController: UICollectionViewDataSource {
         cell.descriptionLabel.text = products[indexPath.row].productDescription
         cell.collectionTitleLabel.text = products[indexPath.row].collectionTitle
         
+        // Load image from URL
         if let url = URL(string: products[indexPath.row].collectionImageURL) {
             // dont block the UI thread
             DispatchQueue.global().async {

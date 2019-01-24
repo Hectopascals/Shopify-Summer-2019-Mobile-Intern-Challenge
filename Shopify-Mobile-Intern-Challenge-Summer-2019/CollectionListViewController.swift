@@ -16,13 +16,6 @@ class CollectionListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        Requests.fetchCollectionList() { collectionList in
-            self.tableData = collectionList
-            DispatchQueue.main.async { // reload table data in the main thread
-                self.tableView.reloadData()
-            }
-        }
-        
         tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.dataSource = self
         tableView.delegate = self
@@ -30,6 +23,13 @@ class CollectionListViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.contentInset.top = 10
         
+        Requests.fetchCollectionList() { collectionList in
+            self.tableData = collectionList
+            // Reload table data in the main thread
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
         view.addSubview(tableView)
     }
 

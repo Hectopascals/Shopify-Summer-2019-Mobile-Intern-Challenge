@@ -13,7 +13,7 @@ struct Constants {
     static let websiteSuffix = "page=1&access_token=c32313df0d0ef512ca64d5b336a0d7c6"
 }
 
-// All the Decodable structs
+// MARK: - Decodable Structs
 struct Variant: Decodable {
     let inventory_quantity: Int
 }
@@ -33,7 +33,7 @@ struct Collects: Decodable {
     let product_id: Int
 }
 
-// basically list of product id's
+// list of product id's
 struct CollectsList: Decodable {
     let collects: [Collects]
 }
@@ -48,13 +48,12 @@ struct Collections: Decodable {
     let image: Image
 }
 
-// List of Collections with title & id
 struct CollectionList: Decodable {
     let custom_collections: [Collections]
 }
 
 struct Requests {
-    // Helper
+    // MARK: - Helpers
     static func getCustomCollections(data: Data) -> [Collections] {
         do {
             let collectionList = try JSONDecoder().decode(CollectionList.self, from: data)
@@ -65,6 +64,52 @@ struct Requests {
         }
     }
     
+    static func getProductIds(data: Data) -> String {
+        do {
+            let collectList = try JSONDecoder().decode(CollectsList.self, from: data)
+            return collectList.collects.compactMap({String($0.product_id)}).joined(separator: ",")
+        } catch let jsonErr {
+            print("Error serializing JSON for Collects:", jsonErr)
+            return ""
+        }
+    }
+    
+    static func getProducts(data: Data) -> [Product] {
+        do {
+            let productList = try JSONDecoder().decode(ProductList.self, from: data)
+            return (productList.products)
+        } catch let jsonErr {
+            print("Error serializing JSON for ProductList:", jsonErr)
+            return []
+        }
+    }
+    
+    static func responseSuccess(data: Data?, response: URLResponse?, error: Error?) -> Bool {
+        if let error = error {
+            handleClientError(error:error)
+            return false
+        }
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+            (200...299).contains(httpResponse.statusCode),
+            let mimeType = httpResponse.mimeType,
+            mimeType == "application/json",
+            let _ = data else {
+                handleServerError()
+                return false
+        }
+        return true
+    }
+    
+    static func handleClientError(error: Error) {
+        print("Transport error occurred", error)
+    }
+    
+    static func handleServerError() {
+        print("Server error occurred")
+    }
+    
+    // MARK: - Fetch Functions
     static func fetchCollectionList(completion: @escaping([Collections])->()) {
         guard let url = URL(string: Constants.websitePrefix + "custom_collections.json?" +
             Constants.websiteSuffix) else {
@@ -72,18 +117,10 @@ struct Requests {
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                handleClientError(error:error)
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                (200...299).contains(httpResponse.statusCode) else {
-                    handleServerError()
+            if responseSuccess(data: data, response: response, error: error) {
+                guard let data = data else {
                     return
-            }
-            
-            if let mimeType = httpResponse.mimeType, mimeType == "application/json", let data = data {
+                }
                 completion(getCustomCollections(data: data))
             }
         }
@@ -97,18 +134,12 @@ struct Requests {
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                handleClientError(error:error)
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                (200...299).contains(httpResponse.statusCode) else {
-                    handleServerError()
+            if responseSuccess(data: data, response: response, error: error) {
+                guard let data = data else {
                     return
-            }
-            
-            if let mimeType = httpResponse.mimeType, mimeType == "application/json", let data = data {
+                }
+                
+                // Fetch a list of Products given product id's (as data)
                 fetchProducts(productIds: getProductIds(data: data)) { products in
                     completion(products)
                 }
@@ -117,18 +148,7 @@ struct Requests {
         task.resume()
     }
     
-    // Helper
-    static func getProductIds(data: Data) -> String {
-        do {
-            let collectList = try JSONDecoder().decode(CollectsList.self, from: data)
-            return collectList.collects.compactMap({String($0.product_id)}).joined(separator: ",")
-        } catch let jsonErr {
-            print("Error serializing JSON for CollectionList:", jsonErr)
-            return ""
-        }
-    }
-    
-    // Fetches products (private)
+    // Fetches a list of products, implicitly called via fetchProductsFromCollects
     static func fetchProducts(productIds: String, completion: @escaping([Product])->()) {
         guard let url = URL(string: Constants.websitePrefix + "products.json?ids=" + productIds + "&" +
             Constants.websiteSuffix) else {
@@ -136,40 +156,13 @@ struct Requests {
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                handleClientError(error:error)
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                (200...299).contains(httpResponse.statusCode) else {
-                    handleServerError()
+            if responseSuccess(data: data, response: response, error: error) {
+                guard let data = data else {
                     return
-            }
-            
-            if let mimeType = httpResponse.mimeType, mimeType == "application/json", let data = data {
+                }
                 completion(getProducts(data: data))
             }
         }
         task.resume()
-    }
-    
-    // Helper
-    static func getProducts(data: Data) -> [Product] {
-        do {
-            let productList = try JSONDecoder().decode(ProductList.self, from: data)
-            return (productList.products)
-        } catch let jsonErr {
-            print("Error serializing JSON for CollectionList:", jsonErr)
-            return []
-        }
-    }
-    
-    static func handleClientError(error: Error) {
-        print("Transport error occurred", error)
-    }
-    
-    static func handleServerError() {
-        print("Server error occurred")
     }
 }
