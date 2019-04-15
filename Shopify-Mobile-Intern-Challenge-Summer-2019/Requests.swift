@@ -10,7 +10,7 @@ import Foundation
 
 struct Constants {
     static let websitePrefix = "https://shopicruit.myshopify.com/admin/"
-    static let websiteSuffix = "page=1&access_token=c32313df0d0ef512ca64d5b336a0d7c6"
+    static let websiteSuffix = "&page=1&access_token=c32313df0d0ef512ca64d5b336a0d7c6"
 }
 
 // MARK: - Decodable Structs
@@ -54,6 +54,14 @@ struct CollectionList: Decodable {
 
 struct Requests {
     // MARK: - Helpers
+    static func createURL(typeOfRequest: String, urlBody: String?) -> URL? {
+        if let urlBody = urlBody {
+            return URL(string: Constants.websitePrefix + typeOfRequest + ".json?" + urlBody + Constants.websiteSuffix)
+        } else {
+            return URL(string: Constants.websitePrefix + typeOfRequest + ".json?" + Constants.websiteSuffix)
+        }
+    }
+    
     static func getCustomCollections(data: Data) -> [Collections] {
         do {
             let collectionList = try JSONDecoder().decode(CollectionList.self, from: data)
@@ -111,9 +119,8 @@ struct Requests {
     
     // MARK: - Fetch Functions
     static func fetchCollectionList(completion: @escaping([Collections])->()) {
-        guard let url = URL(string: Constants.websitePrefix + "custom_collections.json?" +
-            Constants.websiteSuffix) else {
-                return
+        guard let url = createURL(typeOfRequest: "custom_collections", urlBody: nil) else {
+            return
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -128,9 +135,8 @@ struct Requests {
     }
     
     static func fetchProductsFromCollects(collectionId: Int, completion: @escaping([Product])->()) {
-        guard let url = URL(string: Constants.websitePrefix + "collects.json?collection_id=" + String(collectionId) + "&" +
-            Constants.websiteSuffix) else {
-                return
+        guard let url = createURL(typeOfRequest: "collects", urlBody: "collection_id=" + String(collectionId)) else {
+            return
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -150,9 +156,8 @@ struct Requests {
     
     // Fetches a list of products, implicitly called via fetchProductsFromCollects
     static func fetchProducts(productIds: String, completion: @escaping([Product])->()) {
-        guard let url = URL(string: Constants.websitePrefix + "products.json?ids=" + productIds + "&" +
-            Constants.websiteSuffix) else {
-                return
+        guard let url = createURL(typeOfRequest: "products", urlBody: "ids=" + productIds) else {
+            return
         }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
